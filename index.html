@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gallery Viewer</title>
+    <title>히토미 용사님 - Gallery Viewer</title>
     <style>
         /* --- 기본 스타일 설정 --- */
         body {
@@ -12,11 +12,96 @@
             background-color: #f0f2f5;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             color: #333;
+            overflow-x: hidden; /* 인트로 애니메이션 스크롤 방지 */
         }
         a { text-decoration: none; color: inherit; cursor: pointer; }
         ul { list-style: none; padding: 0; margin: 0; }
         button { border: none; background: none; cursor: pointer; font-family: inherit; }
 
+        /* =========================================
+           [0. 인트로 애니메이션 스타일] 
+           ========================================= */
+        #intro-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #fff;
+            z-index: 9999; /* 최상단 */
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            transition: opacity 0.5s ease-out, visibility 0.5s;
+        }
+
+        /* 만화 집중선 배경 효과 */
+        .comic-burst {
+            position: absolute;
+            width: 200vmax;
+            height: 200vmax;
+            background: repeating-conic-gradient(
+                from 0deg,
+                #fff 0deg 10deg,
+                #ffe0e6 10deg 20deg /* 연한 핑크 */
+            );
+            animation: spin 10s linear infinite;
+            z-index: -1;
+            opacity: 0.6;
+        }
+
+        /* 로고 등장 애니메이션 */
+        .intro-logo {
+            width: 80%;
+            max-width: 600px;
+            height: auto;
+            transform: scale(0);
+            animation: popIn 0.8s cubic-bezier(0.68, -0.55, 0.27, 1.55) forwards;
+            animation-delay: 0.3s;
+            filter: drop-shadow(0 5px 15px rgba(255, 105, 180, 0.4));
+        }
+
+        /* 태그 글자 효과 */
+        .intro-tags {
+            margin-top: 20px;
+            font-size: 18px;
+            font-weight: bold;
+            color: #ff6b6b;
+            font-family: "Courier New", monospace;
+            height: 24px;
+        }
+        .intro-tags span {
+            display: inline-block;
+            animation: blink 0.5s infinite;
+        }
+
+        /* 하트 파티클 */
+        .heart-particle {
+            position: absolute;
+            color: #ff6b6b;
+            font-size: 24px;
+            animation: floatUp 2s ease-in infinite;
+            opacity: 0;
+        }
+
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+        @keyframes popIn { 
+            0% { transform: scale(0); opacity: 0; }
+            80% { transform: scale(1.1); opacity: 1; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        @keyframes blink { 50% { opacity: 0; } }
+        @keyframes floatUp {
+            0% { transform: translateY(0) scale(0.5); opacity: 0; }
+            20% { opacity: 1; }
+            100% { transform: translateY(-100px) scale(1.5); opacity: 0; }
+        }
+
+        /* =========================================
+           [기존 사이트 스타일] 
+           ========================================= */
         /* --- 1. 헤더 영역 --- */
         header {
             background: 
@@ -217,11 +302,11 @@
             border-color: #334e68;
         }
 
-        /* --- 4. 하단 광고 배너 스타일 --- */
+        /* --- 4. 하단 광고 배너 스타일 [사이즈 축소됨] --- */
         .ad-banner-container {
-            max-width: 720px;
-            margin: 50px auto 30px auto;
-            padding: 0 20px;
+            max-width: 700px;
+            width: 90%;
+            margin: 40px auto 30px auto;
             text-align: center;
         }
         .ad-banner-link {
@@ -229,11 +314,10 @@
             transition: transform 0.2s;
         }
         .ad-banner-link:hover {
-            transform: scale(1.01);
+            transform: scale(1.02);
         }
         .ad-banner-img {
             width: 100%;
-            max-width: 100%;
             height: auto;
             border-radius: 12px;
             box-shadow: 0 4px 15px rgba(0,0,0,0.15);
@@ -278,6 +362,14 @@
     </style>
 </head>
 <body>
+
+    <div id="intro-overlay">
+        <div class="comic-burst"></div>
+        <img src="https://igx.kr/u/NC/c/m" alt="히토미 용사님 타이틀" class="intro-logo">
+        <div class="intro-tags">
+            Loading: <span id="tag-text">yusha ♀</span>
+        </div>
+        </div>
 
     <header>
         <div class="top-nav">
@@ -326,6 +418,53 @@
     </div>
 
     <script>
+        // ===========================================
+        // [0. 인트로 애니메이션 로직]
+        // ===========================================
+        const introOverlay = document.getElementById('intro-overlay');
+        const tagText = document.getElementById('tag-text');
+        
+        // 태그 목록 (제공된 세계관 설정 반영)
+        const tags = ["yusha ♀", "hentai ♀", "black_comedy", "isekai", "loading..."];
+        let tagIndex = 0;
+
+        // 태그 텍스트 변경 애니메이션
+        const tagInterval = setInterval(() => {
+            tagIndex = (tagIndex + 1) % tags.length;
+            tagText.innerText = tags[tagIndex];
+        }, 400); // 0.4초마다 태그 변경
+
+        // 하트 파티클 생성 함수
+        function createHeart() {
+            const heart = document.createElement('div');
+            heart.classList.add('heart-particle');
+            heart.innerHTML = '♥';
+            heart.style.left = Math.random() * 100 + 'vw';
+            heart.style.animationDuration = Math.random() * 1 + 1.5 + 's'; // 1.5~2.5s
+            introOverlay.appendChild(heart);
+
+            // 애니메이션 끝나면 요소 삭제
+            setTimeout(() => {
+                heart.remove();
+            }, 2500);
+        }
+
+        // 하트 생성 인터벌
+        const heartInterval = setInterval(createHeart, 300);
+
+        // 3.5초 후 인트로 종료
+        setTimeout(() => {
+            clearInterval(tagInterval);
+            clearInterval(heartInterval);
+            introOverlay.style.opacity = '0';
+            introOverlay.style.visibility = 'hidden';
+        }, 3500);
+
+
+        // ===========================================
+        // [기존 메인 로직]
+        // ===========================================
+        
         // --- 데이터베이스 ---
         const db = [
             {
