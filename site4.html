@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gallery Viewer</title>
+    <style>
+        /* --- 기본 스타일 설정 --- */
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #f0f2f5;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #333;
+        }
+        a { text-decoration: none; color: inherit; cursor: pointer; }
+        ul { list-style: none; padding: 0; margin: 0; }
+        button { border: none; background: none; cursor: pointer; font-family: inherit; }
+
+        /* --- 1. 헤더 영역 --- */
+        header {
+            background: 
+                linear-gradient(rgba(20, 30, 48, 0.95), rgba(36, 59, 85, 0.95)),
+                url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 40 40"><path d="M0 20 L20 0 L40 20 L20 40 Z" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="1"/></svg>');
+            background-size: cover, 40px 40px;
+            color: #eee;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+        }
+
+        .top-nav {
+            padding: 10px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .logo-area {
+            display: flex;
+            align-items: center;
+            gap: 25px;
+        }
+        
+        .logo-text {
+            font-size: 26px;
+            color: #fff;
+            font-weight: 900;
+            letter-spacing: -1px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+        
+        .logo-text span { color: #ff6b6b; }
+
+        .nav-links a {
+            margin-right: 20px;
+            color: #ccc;
+            font-weight: 700;
+            font-size: 14px;
+            text-transform: uppercase;
+            transition: color 0.2s;
+        }
+        .nav-links a:hover { color: #fff; }
+
+        .search-box {
+            display: flex;
+            background: rgba(255,255,255,0.15);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .search-box input {
+            padding: 8px 12px;
+            border: none;
+            background: transparent;
+            color: #fff;
+            font-size: 14px;
+            width: 200px;
+        }
+        .search-box input::placeholder { color: #aaa; }
+        .search-box button {
+            background: #334e68;
+            color: #fff;
+            padding: 8px 15px;
+            font-weight: bold;
+            font-size: 13px;
+            transition: background 0.2s;
+        }
+        .search-box button:hover { background: #4a6f91; }
+
+        /* --- 2. 서브 헤더 --- */
+        .sub-header {
+            padding: 12px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 13px;
+            color: #aaa;
+            background: rgba(0,0,0,0.2);
+        }
+        
+        .sub-header strong { font-size: 18px; color: #fff; margin-right: 15px; font-weight: 800; }
+        .page-list a {
+            margin: 0 5px;
+            padding: 4px 8px;
+            color: #ccc;
+            border-radius: 4px;
+            transition: all 0.2s;
+        }
+        .page-list a.active, .page-list a:hover {
+            background: #ff6b6b;
+            color: white;
+            font-weight: bold;
+        }
+        .page-list span { margin: 0 5px; }
+
+        /* --- 3. 메인 콘텐츠 영역 --- */
+        #app {
+            max-width: 1100px;
+            margin: 30px auto;
+            padding: 0 20px;
+            min-height: 60vh;
+        }
+
+        /* [메인 리스트 스타일] */
+        .main-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 25px;
+        }
+
+        .main-thumb {
+            width: 100%;
+            aspect-ratio: 1 / 1;
+            object-fit: cover;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .main-thumb:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+        }
+
+        /* [상세 페이지 스타일] */
+        .detail-container {
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+
+        .pink-title-bar {
+            background-color: #f8d7da;
+            color: #721c24;
+            padding: 10px 15px;
+            font-weight: bold;
+            font-size: 16px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+        }
+
+        .back-btn {
+            display: inline-flex;
+            align-items: center;
+            margin-bottom: 20px;
+            padding: 8px 16px;
+            background: #495057;
+            color: white;
+            font-size: 14px;
+            border-radius: 4px;
+            font-weight: 600;
+            transition: background 0.2s;
+        }
+        .back-btn:hover { background: #343a40; }
+        .back-btn::before { content: '←'; margin-right: 8px; }
+
+        .image-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .image-grid img {
+            width: 100%;
+            height: auto;
+            display: block;
+            border-radius: 4px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            cursor: zoom-in;
+            transition: opacity 0.2s;
+        }
+        .image-grid img:hover {
+            opacity: 0.9;
+        }
+
+        /* 상세 페이지네이션 */
+        .detail-pagination {
+            text-align: center;
+            padding: 20px 0;
+            border-top: 1px solid #eee;
+        }
+        .detail-pagination button {
+            background: #fff;
+            border: 2px solid #ddd;
+            padding: 8px 20px;
+            margin: 0 5px;
+            font-weight: bold;
+            font-size: 14px;
+            color: #555;
+            border-radius: 4px;
+            transition: all 0.2s;
+        }
+        .detail-pagination button.active, .detail-pagination button:hover {
+            background: #334e68;
+            color: #fff;
+            border-color: #334e68;
+        }
+
+        /* --- 4. 하단 광고 배너 스타일 --- */
+        .ad-banner-container {
+            max-width: 720px;
+            margin: 50px auto 30px auto;
+            padding: 0 20px;
+            text-align: center;
+        }
+        .ad-banner-link {
+            display: block;
+            transition: transform 0.2s;
+        }
+        .ad-banner-link:hover {
+            transform: scale(1.01);
+        }
+        .ad-banner-img {
+            width: 100%;
+            max-width: 100%;
+            height: auto;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+            display: block;
+        }
+
+        /* --- 5. 라이트박스(크게 보기) 스타일 --- */
+        #lightbox {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.9);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
+
+        #lightbox img {
+            max-width: 95%;
+            max-height: 90%;
+            border: 2px solid #fff;
+            border-radius: 4px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+        }
+
+        #lightbox-close {
+            position: absolute;
+            top: 20px;
+            right: 30px;
+            font-size: 40px;
+            color: #fff;
+            cursor: pointer;
+            font-weight: bold;
+            transition: color 0.2s;
+        }
+        #lightbox-close:hover { color: #ff6b6b; }
+
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="top-nav">
+            <div class="logo-area">
+                <a href="#" onclick="location.reload()" class="logo-text">Citomi<span>♥</span></a>
+                <div class="nav-links">
+                    <a href="#">TAGS</a>
+                    <a href="#">ARTISTS</a>
+                    <a href="#">SERIES</a>
+                    <a href="#">CHARACTERS</a>
+                </div>
+            </div>
+            <div class="search-box">
+                <input type="text" placeholder="Search...">
+                <button>Search</button>
+            </div>
+        </div>
+
+        <div class="sub-header">
+            <div>
+                <strong>Recently Added</strong>
+                <span>Date Added</span>
+            </div>
+            <div class="page-list">
+                <a href="#" class="active">1</a>
+                <a href="#">2</a>
+                <a href="#">3</a>
+                <span>...</span>
+                <a href="#">43960</a>
+            </div>
+        </div>
+    </header>
+
+    <main id="app">
+        </main>
+
+    <div class="ad-banner-container">
+        <a href="https://share.crack.wrtn.ai/8x7wjc" class="ad-banner-link" target="_blank"> 
+            <img src="https://igx.kr/u/NC/c/n" alt="광고 배너" class="ad-banner-img">
+        </a>
+    </div>
+
+    <div id="lightbox" onclick="closeLightbox()">
+        <span id="lightbox-close">&times;</span>
+        <img id="lightbox-img" src="" onclick="event.stopPropagation()">
+    </div>
+
+    <script>
+        // --- 데이터베이스 ---
+        const db = [
+            {
+                id: 0,
+                title: "Hitomi yūsha【Kido】",
+                thumb: "https://igx.kr/u/NC/c/c",
+                pages: [
+                    // 1페이지
+                    [
+                        "https://igx.kr/u/LB/D/c", "https://igx.kr/u/LB/D/d", "https://igx.kr/u/LB/D/g",
+                        "https://igx.kr/u/LB/D/h", "https://igx.kr/u/LB/D/j", "https://igx.kr/u/LB/D/k",
+                        "https://igx.kr/u/LB/D/l", "https://igx.kr/u/LB/D/m", "https://igx.kr/u/LB/D/n",
+                        "https://igx.kr/u/LB/D/p", "https://igx.kr/u/LB/D/q", "https://igx.kr/u/LB/D/r",
+                        "https://igx.kr/u/LB/D/t"
+                    ],
+                    // 2페이지
+                    [
+                        "https://igx.kr/u/MB/D/c", "https://igx.kr/u/MB/D/d", "https://igx.kr/u/MB/D/g",
+                        "https://igx.kr/u/MB/D/h", "https://igx.kr/u/MB/D/j", "https://igx.kr/u/MB/D/k",
+                        "https://igx.kr/u/MB/D/l", "https://igx.kr/u/MB/D/m", "https://igx.kr/u/MB/D/n",
+                        "https://igx.kr/u/MB/D/p", "https://igx.kr/u/MB/D/q", "https://igx.kr/u/MB/D/r",
+                        "https://igx.kr/u/MB/D/t"
+                    ]
+                ]
+            },
+            {
+                id: 1,
+                title: "Hitomi yūsha【Bera】",
+                thumb: "https://igx.kr/u/NC/c/d",
+                pages: [
+                    [
+                        "https://igx.kr/u/LB/v/c", "https://igx.kr/u/LB/v/d", "https://igx.kr/u/LB/v/g",
+                        "https://igx.kr/u/LB/v/h", "https://igx.kr/u/LB/v/j", "https://igx.kr/u/LB/v/k",
+                        "https://igx.kr/u/LB/v/l", "https://igx.kr/u/LB/v/m", "https://igx.kr/u/LB/v/n",
+                        "https://igx.kr/u/LB/v/p", "https://igx.kr/u/LB/v/q", "https://igx.kr/u/LB/v/r",
+                        "https://igx.kr/u/LB/v/t"
+                    ],
+                    [
+                        "https://igx.kr/u/MB/v/c", "https://igx.kr/u/MB/v/d", "https://igx.kr/u/MB/v/g",
+                        "https://igx.kr/u/MB/v/h", "https://igx.kr/u/MB/v/j", "https://igx.kr/u/MB/v/k",
+                        "https://igx.kr/u/MB/v/l", "https://igx.kr/u/MB/v/m", "https://igx.kr/u/MB/v/n",
+                        "https://igx.kr/u/MB/v/p", "https://igx.kr/u/MB/v/q", "https://igx.kr/u/MB/v/r",
+                        "https://igx.kr/u/MB/v/t"
+                    ]
+                ]
+            },
+            {
+                id: 2,
+                title: "Hitomi yūsha【Amaran】",
+                thumb: "https://igx.kr/u/NC/c/g",
+                pages: [
+                    [
+                        "https://igx.kr/u/LB/w/c", "https://igx.kr/u/LB/w/d", "https://igx.kr/u/LB/w/g",
+                        "https://igx.kr/u/LB/w/h", "https://igx.kr/u/LB/w/j", "https://igx.kr/u/LB/w/k",
+                        "https://igx.kr/u/LB/w/l", "https://igx.kr/u/LB/w/m", "https://igx.kr/u/LB/w/n",
+                        "https://igx.kr/u/LB/w/p", "https://igx.kr/u/LB/w/q", "https://igx.kr/u/LB/w/r",
+                        "https://igx.kr/u/LB/w/t"
+                    ],
+                    [
+                        "https://igx.kr/u/MB/w/c", "https://igx.kr/u/MB/w/d", "https://igx.kr/u/MB/w/g",
+                        "https://igx.kr/u/MB/w/h", "https://igx.kr/u/MB/w/j", "https://igx.kr/u/MB/w/k",
+                        "https://igx.kr/u/MB/w/l", "https://igx.kr/u/MB/w/m", "https://igx.kr/u/MB/w/n",
+                        "https://igx.kr/u/MB/w/p", "https://igx.kr/u/MB/w/q", "https://igx.kr/u/MB/w/r",
+                        "https://igx.kr/u/MB/w/t"
+                    ]
+                ]
+            },
+            {
+                id: 3,
+                title: "Hitomi yūsha【Puria】",
+                thumb: "https://igx.kr/u/NC/c/h",
+                pages: [
+                    [
+                        "https://igx.kr/u/LB/y/c", "https://igx.kr/u/LB/y/d", "https://igx.kr/u/LB/y/g",
+                        "https://igx.kr/u/LB/y/h", "https://igx.kr/u/LB/y/j", "https://igx.kr/u/LB/y/k",
+                        "https://igx.kr/u/LB/y/l", "https://igx.kr/u/LB/y/m", "https://igx.kr/u/LB/y/n",
+                        "https://igx.kr/u/LB/y/p", "https://igx.kr/u/LB/y/q", "https://igx.kr/u/LB/y/r",
+                        "https://igx.kr/u/LB/y/t"
+                    ],
+                    [
+                        "https://igx.kr/u/MB/y/c", "https://igx.kr/u/MB/y/d", "https://igx.kr/u/MB/y/g",
+                        "https://igx.kr/u/MB/y/h", "https://igx.kr/u/MB/y/j", "https://igx.kr/u/MB/y/k",
+                        "https://igx.kr/u/MB/y/l", "https://igx.kr/u/MB/y/m", "https://igx.kr/u/MB/y/n",
+                        "https://igx.kr/u/MB/y/p", "https://igx.kr/u/MB/y/q", "https://igx.kr/u/MB/y/r",
+                        "https://igx.kr/u/MB/y/t"
+                    ]
+                ]
+            },
+            {
+                id: 4,
+                title: "Hitomi yūsha【Risoresu】",
+                thumb: "https://igx.kr/u/NC/c/k",
+                pages: [
+                    [
+                        "https://igx.kr/u/LB/z/c", "https://igx.kr/u/LB/z/d", "https://igx.kr/u/LB/z/g",
+                        "https://igx.kr/u/LB/z/h", "https://igx.kr/u/LB/z/j", "https://igx.kr/u/LB/z/k",
+                        "https://igx.kr/u/LB/z/l", "https://igx.kr/u/LB/z/m", "https://igx.kr/u/LB/z/n",
+                        "https://igx.kr/u/LB/z/p", "https://igx.kr/u/LB/z/q", "https://igx.kr/u/LB/z/r",
+                        "https://igx.kr/u/LB/z/t"
+                    ],
+                    [
+                        "https://igx.kr/u/MB/z/c", "https://igx.kr/u/MB/z/d", "https://igx.kr/u/MB/z/g",
+                        "https://igx.kr/u/MB/z/h", "https://igx.kr/u/MB/z/j", "https://igx.kr/u/MB/z/k",
+                        "https://igx.kr/u/MB/z/l", "https://igx.kr/u/MB/z/m", "https://igx.kr/u/MB/z/n",
+                        "https://igx.kr/u/MB/z/p", "https://igx.kr/u/MB/z/q", "https://igx.kr/u/MB/z/r",
+                        "https://igx.kr/u/MB/z/t"
+                    ]
+                ]
+            },
+            {
+                id: 5,
+                title: "Hitomi yūsha【Peshimusu】",
+                thumb: "https://igx.kr/u/NC/c/j",
+                pages: [
+                    [
+                        "https://igx.kr/u/LB/B/c", "https://igx.kr/u/LB/B/d", "https://igx.kr/u/LB/B/g",
+                        "https://igx.kr/u/LB/B/h", "https://igx.kr/u/LB/B/j", "https://igx.kr/u/LB/B/k",
+                        "https://igx.kr/u/LB/B/l", "https://igx.kr/u/LB/B/m", "https://igx.kr/u/LB/B/n",
+                        "https://igx.kr/u/LB/B/p", "https://igx.kr/u/LB/B/q", "https://igx.kr/u/LB/B/r",
+                        "https://igx.kr/u/LB/B/t"
+                    ],
+                    [
+                        "https://igx.kr/u/MB/B/c", "https://igx.kr/u/MB/B/d", "https://igx.kr/u/MB/B/g",
+                        "https://igx.kr/u/MB/B/h", "https://igx.kr/u/MB/B/j", "https://igx.kr/u/MB/B/k",
+                        "https://igx.kr/u/MB/B/l", "https://igx.kr/u/MB/B/m", "https://igx.kr/u/MB/B/n",
+                        "https://igx.kr/u/MB/B/p", "https://igx.kr/u/MB/B/q", "https://igx.kr/u/MB/B/r",
+                        "https://igx.kr/u/MB/B/t"
+                    ]
+                ]
+            },
+            {
+                id: 6,
+                title: "Hitomi yūsha【Karutā】",
+                thumb: "https://igx.kr/u/NC/c/l",
+                pages: [
+                    [
+                        "https://igx.kr/u/LB/C/c", "https://igx.kr/u/LB/C/d", "https://igx.kr/u/LB/C/g",
+                        "https://igx.kr/u/LB/C/h", "https://igx.kr/u/LB/C/j", "https://igx.kr/u/LB/C/k",
+                        "https://igx.kr/u/LB/C/l", "https://igx.kr/u/LB/C/m", "https://igx.kr/u/LB/C/n",
+                        "https://igx.kr/u/LB/C/p", "https://igx.kr/u/LB/C/q", "https://igx.kr/u/LB/C/r",
+                        "https://igx.kr/u/LB/C/t"
+                    ],
+                    [
+                        "https://igx.kr/u/MB/C/c", "https://igx.kr/u/MB/C/d", "https://igx.kr/u/MB/C/g",
+                        "https://igx.kr/u/MB/C/h", "https://igx.kr/u/MB/C/j", "https://igx.kr/u/MB/C/k",
+                        "https://igx.kr/u/MB/C/l", "https://igx.kr/u/MB/C/m", "https://igx.kr/u/MB/C/n",
+                        "https://igx.kr/u/MB/C/p", "https://igx.kr/u/MB/C/q", "https://igx.kr/u/MB/C/r",
+                        "https://igx.kr/u/MB/C/t"
+                    ]
+                ]
+            }
+        ];
+
+        // --- 앱 상태 관리 ---
+        const app = document.getElementById('app');
+
+        // 1. 메인 리스트 렌더링
+        function renderMainList() {
+            let html = '<div class="main-grid">';
+            db.forEach(item => {
+                html += `
+                    <img src="${item.thumb}" class="main-thumb" onclick="renderDetailView(${item.id}, 0)" alt="${item.title}">
+                `;
+            });
+            html += '</div>';
+            app.innerHTML = html;
+        }
+
+        // 2. 상세 페이지 렌더링
+        function renderDetailView(itemId, pageIndex) {
+            const item = db[itemId];
+            const images = item.pages[pageIndex];
+
+            let gridHtml = '<div class="image-grid">';
+            images.forEach(imgUrl => {
+                gridHtml += `<img src="${imgUrl}" onclick="openLightbox('${imgUrl}')" alt="detail image">`;
+            });
+            gridHtml += '</div>';
+
+            app.innerHTML = `
+                <div class="detail-container">
+                    <div class="pink-title-bar">
+                        ${item.title} - Page ${pageIndex + 1}
+                    </div>
+                    
+                    <a class="back-btn" onclick="renderMainList()">Back to List</a>
+
+                    ${gridHtml}
+
+                    <div class="detail-pagination">
+                        <button onclick="renderDetailView(${itemId}, 0)" class="${pageIndex === 0 ? 'active' : ''}">1</button>
+                        <button onclick="renderDetailView(${itemId}, 1)" class="${pageIndex === 1 ? 'active' : ''}">2</button>
+                    </div>
+                </div>
+            `;
+            
+            window.scrollTo(0, 0);
+        }
+
+        // 3. 라이트박스 열기 함수
+        function openLightbox(imageUrl) {
+            const lightbox = document.getElementById('lightbox');
+            const lightboxImg = document.getElementById('lightbox-img');
+            
+            lightboxImg.src = imageUrl; 
+            lightbox.style.display = 'flex'; 
+        }
+
+        // 4. 라이트박스 닫기 함수
+        function closeLightbox() {
+            const lightbox = document.getElementById('lightbox');
+            const lightboxImg = document.getElementById('lightbox-img');
+            
+            lightbox.style.display = 'none'; 
+            lightboxImg.src = ''; 
+        }
+
+        renderMainList();
+
+    </script>
+</body>
+</html>
